@@ -23,6 +23,9 @@ export function NavBar() {
                     <Button variant="outline"  className="mx-1.5">
                         <Link href="./about" className="text-lg font-mono">About</Link>
                     </Button>
+                    <Button variant="outline"  className="mx-1.5">
+                        <Link href="./new" className="text-lg font-mono">New</Link>
+                    </Button>
                 </div>
                 <div className="flex flex-auto max-w-1/3 justify-center items-center">
                     <h1 className="font-mono text-4xl">_toDo.List()</h1>
