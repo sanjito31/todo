@@ -17,6 +17,8 @@ datasource db {
 model tasks {
   id        Int       @id @default(autoincrement())
   detail    String  
+  dueDate   DateTime?  
+  complete  Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt @default(now())
 }
