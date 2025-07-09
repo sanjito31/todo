@@ -1,6 +1,6 @@
 import React from 'react'
 import prisma from '@/lib/prisma'
-import MainToDoModule from './MainToDoModule'
+import MainToDoModule from '../../components/core/MainToDoModule'
 
 export default async function New() {
 

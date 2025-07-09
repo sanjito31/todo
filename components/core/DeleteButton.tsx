@@ -1,4 +1,4 @@
-import { deleteTask } from "./actions";
+import { deleteTask } from "../../lib/actions";
 import { Button } from "@/components/ui/button";
 
 import React from 'react'

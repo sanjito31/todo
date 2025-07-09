@@ -4,12 +4,10 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 
-export async function createTask(detail: string, dueDate?: Date) {
-
-    // const detail = formData.get("detail") as string;
+export async function createTask(detail: string, revalPath: string, dueDate?: Date ) {
 
     await prisma.tasks.create({
-        data: { 
+        data: {
             detail: detail,
             ...(dueDate && {
                 dueDate: dueDate
@@ -17,20 +15,20 @@ export async function createTask(detail: string, dueDate?: Date) {
         }
     })
 
-    revalidatePath("/new");
+    revalidatePath(revalPath);
 }
 
-export async function deleteTask(id: number) {
+export async function deleteTask(id: number, revalPath: string) {
 
     await prisma.tasks.delete({
         where: { id }
     })
 
-    revalidatePath("/new");
+    revalidatePath(revalPath);
 
 }
 
-export async function updateTask(id: number, updatedDetail?: string, updatedDueDate?: Date) {
+export async function updateTask(id: number, revalPath: string, updatedDetail?: string, updatedDueDate?: Date) {
 
     await prisma.tasks.update({
         where: { id },
@@ -40,6 +38,6 @@ export async function updateTask(id: number, updatedDetail?: string, updatedDueD
         }
     })
 
-    revalidatePath("/new");
+    revalidatePath(revalPath);
 
 }

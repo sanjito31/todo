@@ -2,12 +2,13 @@
 
 import React, { useMemo } from 'react'
 import { useState } from 'react'
-import { tasks } from '../generated/prisma'
+import { tasks } from '@/app/generated/prisma'
 import ShowTasks from './ShowTasks'
-import AddTask from './AddTask'
-import { createTask } from './actions'
-import { deleteTask } from './actions'
+import AddTask from '../../components/core/AddTask'
+import { createTask } from '@/lib/actions'
+import { deleteTask } from '@/lib/actions'
 import { Calendar } from '@/components/ui/calendar'
+import {usePathname} from "next/navigation";
 
 type TaskListProps = {
   initTasks: tasks[]
@@ -18,6 +19,7 @@ export default function MainToDoModule( { initTasks } : TaskListProps) {
     const [taskList, setTaskList] = useState<tasks[]>(initTasks);
     // const [currentTasks, setCurrentTasks] = useState<tasks[]>(initTasks);
     const [displayDate, setDisplayDate] = useState<Date | undefined>(new Date(Date.now()))
+    const pathname = usePathname();
 
     const dateFilteredTasks = useMemo(() => {
         if(!displayDate) return taskList;
@@ -43,12 +45,12 @@ export default function MainToDoModule( { initTasks } : TaskListProps) {
             updatedAt: new Date()
         }
         setTaskList(t => [...t, newTask]);
-        await createTask(detail, due || undefined )
+        await createTask(detail, pathname, due || undefined )
     }
 
     async function handleDeleteTask(id: number) {
         setTaskList(t => t.filter(task => task.id !== id))
-        deleteTask(id);
+        await deleteTask(id, pathname);
     }
 
     return (

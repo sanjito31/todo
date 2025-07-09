@@ -5,7 +5,7 @@
 //   NavigationMenuList,
 // } from "@/components/ui/navigation-menu"
 import Link from "next/link";
-import { Button } from "./button";
+import {Button} from "@/components/ui/button"
 import { ModeToggle } from "@/components/ui/ModeToggle";
 // import { NavigationMenuContent } from "@radix-ui/react-navigation-menu";
 
@@ -13,19 +13,19 @@ export function NavBar() {
 
 
     return (
-        
+
         <div>
             <nav className="flex max-w-full justify-center p-2 my-5 mx-6">
                 <div className="flex flex-auto max-w-1/3 justify-start items-center">
-                    <Button variant="secondary" className="mx-1.5">
+                    <Button variant="outline" className="mx-1.5">
                         <Link href="./" className="text-lg font-mono">Home</Link>
                     </Button>
-                    <Button variant="outline"  className="mx-1.5">
-                        <Link href="./about" className="text-lg font-mono">About</Link>
-                    </Button>
-                    <Button variant="outline"  className="mx-1.5">
-                        <Link href="./new" className="text-lg font-mono">New</Link>
-                    </Button>
+                    {/*<Button variant="outline"  className="mx-1.5">*/}
+                    {/*    <Link href="./about" className="text-lg font-mono">About</Link>*/}
+                    {/*</Button>*/}
+                    {/*<Button variant="outline"  className="mx-1.5">*/}
+                    {/*    <Link href="./new" className="text-lg font-mono">New</Link>*/}
+                    {/*</Button>*/}
                 </div>
                 <div className="flex flex-auto max-w-1/3 justify-center items-center">
                     <h1 className="font-mono text-4xl">_toDo.List()</h1>
@@ -33,8 +33,8 @@ export function NavBar() {
                 <div className="flex flex-auto max-w-1/3 justify-end items-center pr-4">
                     <ModeToggle></ModeToggle>
                 </div>
-                    
-                
+
+
             </nav>
         </div>
 
@@ -74,8 +74,8 @@ export function NavBar() {
         //                         </NavigationMenuLink>
         //                     </NavigationMenuItem>
         //                 </div>
-                        
-                            
+
+
         //                 <div className="flex justify-end">
         //                     <NavigationMenuItem>
         //                         <ModeToggle />
