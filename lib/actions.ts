@@ -1,43 +1,55 @@
 'use server'
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+// import { revalidatePath } from "next/cache";
 
 
-export async function createTask(detail: string, revalPath: string, dueDate?: Date ) {
-
-    await prisma.tasks.create({
+export async function createTask(detail: string, dueDate: Date) {
+    //, revalPath: string
+    const task = await prisma.tasks.create({
         data: {
             detail: detail,
-            ...(dueDate && {
-                dueDate: dueDate
-            })
+            dueDate: dueDate
         }
     })
 
-    revalidatePath(revalPath);
+    // revalidatePath(revalPath);
+    return task;
 }
 
-export async function deleteTask(id: number, revalPath: string) {
+export async function deleteTask(id: number) {
 
     await prisma.tasks.delete({
         where: { id }
     })
-
-    revalidatePath(revalPath);
+    //, revalPath: string
+    // revalidatePath(revalPath);
 
 }
 
-export async function updateTask(id: number, revalPath: string, updatedDetail?: string, updatedDueDate?: Date) {
-
+export async function updateTask(id: number, updatedDueDate: Date, updatedDetail: string) {
+    //, revalPath: string
     await prisma.tasks.update({
         where: { id },
         data: {
             detail: updatedDetail,
-            dueDate: updatedDueDate
+            dueDate: updatedDueDate,
+            updatedAt: new Date(),
         }
     })
 
-    revalidatePath(revalPath);
+    // revalidatePath(revalPath);
 
+}
+
+export async function completeTask(id: number) {
+
+    await prisma.tasks.update({
+        where: { id },
+        data: {
+            complete: true,
+        }
+    })
+    //, revalPath: string
+    // revalidatePath(revalPath);
 }
