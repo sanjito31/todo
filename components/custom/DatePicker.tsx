@@ -33,7 +33,6 @@ function isValidDate(date: Date) {
 }
 
 type DatePickerProps = {
-    // label: string
     dateToPick: Date;
     onChangeAction: (date: Date) => void
 }

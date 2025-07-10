@@ -7,12 +7,9 @@ import ShowTasks from './ShowTasks'
 import AddTask from '@/components/core/AddTask'
 import {createTask, deleteTask, completeTask, updateTask} from '@/lib/actions'
 import { Calendar } from '@/components/ui/calendar'
-// import {usePathname} from "next/navigation";
 import {formatDateWithOrdinal} from "@/lib/utils";
 import CheckButton from "@/components/custom/CheckButton";
 import DeleteButton from "@/components/custom/DeleteButton";
-import {CheckIcon} from "lucide-react";
-import {Button} from "@/components/ui/button";
 
 type TaskListProps = {
   initTasks: tasks[]
