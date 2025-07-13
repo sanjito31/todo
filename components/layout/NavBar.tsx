@@ -1,9 +1,10 @@
 import Link from "next/link";
 import {Button} from "@/components/ui/button"
 import { ModeToggle } from "@/components/ui/ModeToggle";
+import UserAvatar from "@/components/UserAvatar";
+import UserLogInOut from "../UserLogInOut";
 
 export function NavBar() {
-
 
     return (
 
@@ -15,13 +16,15 @@ export function NavBar() {
                     </Button>
                 </div>
                 <div className="flex flex-auto max-w-1/3 justify-center items-center">
-                    <h1 className="font-mono text-4xl">_toDo.List()</h1>
+                    <h1 className="font-mono text-2xl">_toDo.List()</h1>
                 </div>
                 <div className="flex flex-auto max-w-1/3 justify-end items-center pr-4">
+                    <UserAvatar />
+                    <div className="mx-2" />
+                    <UserLogInOut></UserLogInOut>                      
+                    <div className="mx-2" />
                     <ModeToggle></ModeToggle>
                 </div>
-
-
             </nav>
         </div>
 

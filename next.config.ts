@@ -4,7 +4,11 @@ const nextConfig: NextConfig = {
   /* config options here */
     eslint: {
     ignoreDuringBuilds: true,
-  },
+    },
+    images: {
+      domains: ['avatars.githubusercontent.com'],
+    },
 };
+
 
 export default nextConfig;

@@ -1,15 +1,25 @@
 'use server'
 
 import prisma from "@/lib/prisma";
+import { auth } from "./auth";
+// import { redirect } from "next/dist/server/api-utils";
 // import { revalidatePath } from "next/cache";
 
 
 export async function createTask(detail: string, dueDate: Date) {
     //, revalPath: string
+
+    const session = await auth();
+
+    if(!session?.user?.id) {
+        throw new Error("You must be signed in.")
+    } 
+
     const task = await prisma.tasks.create({
         data: {
             detail: detail,
-            dueDate: dueDate
+            dueDate: dueDate,
+            ownerID: session.user.id,
         }
     })
 
