@@ -66,6 +66,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         signIn: '/login',
     },
     debug: process.env.NODE_ENV !== "production",
+    // events: {
+    //     async signOut( {session, token }) {
+    //         params.
+    //     }
+    // },
     jwt: {
         encode: async function (params) {
             console.log("ENCODE:", params.token?.toString())
