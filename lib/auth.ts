@@ -8,6 +8,15 @@ import Credentials from "next-auth/providers/credentials"
 import { randomUUID } from "crypto"
 import { encode as defaultEncode, decode as defaultDecode, JWT } from "next-auth/jwt"
 import type { User } from "next-auth"
+import { CredentialsSignin } from "next-auth"
+
+class CredentialAuthorizationError extends CredentialsSignin {
+    code: string
+    constructor(message: string) {
+        super()
+        this.code = message;
+    }
+}
 
 
 const maxAge = 7 * 24 * 60 * 60;
@@ -54,17 +63,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     })
                 } catch(err) {
                     console.log(err)
-                    throw new Error("Error searching for user.")
+                    throw new CredentialAuthorizationError("")
                 }
                 
                 // User or password not found
                 if(!user || !user.hashedPassword) 
-                    throw new Error("User account does not exist.") 
+                    throw new CredentialAuthorizationError("User account does not exist.")
+
+                if(!createAccount(user.id)) {
+                    console.log("Error creating or finding account.")
+                    throw new CredentialAuthorizationError("")
+                }
 
                 // Check user's password against DB 
                 const isValid = await bcrypt.compare(credentials.password, user.hashedPassword)
                 if(!isValid) 
-                    throw new Error("Invalid username or password.")
+                    throw new CredentialAuthorizationError("Invalid username or password.")
 
                 // User has been validated
                 console.log("User successfully authorized.")
@@ -158,16 +172,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     callbacks: {
         // During signIn for credential logins, we must create an account entry 
         // for our user in the DB, if it does not exist already. 
-        async signIn({ user, account }) {
+        // async signIn({ user, account }) {
 
-            if(account?.provider === 'credentials' && user?.id) {
-                if(!createAccount(user.id)) {
-                    console.log("Error creating or finding account.")
-                    throw new Error("Error creating or finding account.")
-                }
-            }
-            return true;
-        },
+        //     if(account?.provider === 'credentials' && user?.id) {
+        //         if(!createAccount(user.id)) {
+        //             console.log("Error creating or finding account.")
+        //             throw new Error("Error creating or finding account.")
+        //         }
+        //     }
+        //     return true;
+        // },
         
         // Key part of our JWT intercept strategy. Marks JWT as 'credentials' type
         async jwt({ token, account }) {
@@ -233,3 +247,27 @@ export async function createAccount(userId: string) {
         }
     })
 }
+
+// type 
+
+// export async function userCredentialLogin(email: string, password: string) {
+
+//     try{
+//         await signIn("credentials", { 
+//             email: email,
+//             password: password,
+//             redirect: false,
+//          })
+
+//          return {
+
+//          }
+
+//     } catch (err) {
+//         if(err) {
+//             return {
+                
+//             }
+//         }
+//     }
+// }

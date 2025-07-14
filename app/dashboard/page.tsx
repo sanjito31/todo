@@ -10,6 +10,7 @@ export default async function Home() {
     if(!session) redirect("/login")
 
     const tasks = await prisma.tasks.findMany({
+        where: { ownerID: session.user?.id },
         orderBy: { createdAt: 'asc' }
     })
 

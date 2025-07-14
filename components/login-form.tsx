@@ -20,21 +20,18 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>();
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();  
-
-
 
   async function handleCredentialLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true);
-    setError('');
+    setError(null);
 
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-
 
 
     try {
@@ -44,23 +41,24 @@ export function LoginForm({
         redirect: false,
       })
 
-      if(result?.error) {
-        console.log("Sign in error:", result.error)
-      } else if(result?.ok) {
-        console.log("sign in successful")
+      if(result?.error || !result?.ok) {
+        setError( result?.code !== "" ? 
+                          result?.code 
+                          : "Internal server error: Please try again later.")
+        return
       } else {
-        console.log("unexpected result", result)
+        console.log("Sign in successful.")
       }
 
       router.push("/dashboard")
 
     } catch(err) {
-      setError('Login failed')
-      console.log("Login failed", err)
+      setError("Unexpected error.")
+      console.log("Unexpected error:", err)
     } finally {
       setLoading(false)
+      return
     }
-    
   }
 
   async function handleSocialLogin(provider: string) {
@@ -107,6 +105,13 @@ export function LoginForm({
                 </span>
               </div>
               <form onSubmit={handleCredentialLogin}>
+              <div>
+                  {error && 
+                  <div id="error">
+                    <p className="text-red-500 mt-2">Could not sign in</p>
+                    <p className="text-red-500 mb-2">{error}</p>
+                  </div>}
+              </div>
               <div className="grid gap-6">
                 <div className="grid gap-3">
                   <Label htmlFor="email">Email</Label>
@@ -130,7 +135,6 @@ export function LoginForm({
                   </div>
                   <Input id="password" name="password" type="password" required />
                 </div>
-                {error && <div>{error}</div>}
                 <Button type="submit" className="w-full">
                   {loading ? 'Logging In...' : 'Login'}
                 </Button>
