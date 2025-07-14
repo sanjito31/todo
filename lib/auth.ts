@@ -2,13 +2,16 @@ import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
 import prisma from "@/lib/prisma"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-// import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from 'bcrypt'
 import Credentials from "next-auth/providers/credentials"
 import { randomUUID } from "crypto"
-// import { cookies } from "next/headers"
 import { encode as defaultEncode, decode as defaultDecode, JWT } from "next-auth/jwt"
+import type { User } from "next-auth"
 
+
+const maxAge = 7 * 24 * 60 * 60;
+
+// Extend JWT to be able to hijack and convert it into session token for credential login
 declare module "next-auth/jwt" {
   interface JWT {
     credentials?: boolean,
@@ -16,10 +19,15 @@ declare module "next-auth/jwt" {
   }
 }
 
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
+
+    // Database
     adapter: PrismaAdapter(prisma),
+
+    // Secret phrase for NEXTAUTH
     secret: process.env.NEXTAUTH_SECRET,
+
+    // Methods to log in
     providers: [
         // User login via email and password
         Credentials({
@@ -28,25 +36,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
             },
-            //: Record<string, unknown> | undefined : Promise<User | null>
-            authorize: async(credentials) => {
-                // console.log("authorize called with: ", credentials)
+            // Authorize user's log in information
+            authorize: async(
+                credentials: Record<string, unknown> | undefined)
+                : Promise<User | null> => {
+
+                // Credential type check
                 if(!credentials || !credentials?.email || !credentials?.password) return null;
                 if(typeof credentials.email !== 'string' || typeof credentials.password !== 'string') return null
 
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email }
-                })
+                let user = null;
+                // Find user via email
+                try {
+                    user = await prisma.user.findUnique({
+                        where: { email: credentials.email }
+                    })
+                } catch(err) {
+                    console.log(err)
+                    throw new Error("Error searching for user.")
+                }
+                
+                // User or password not found
+                if(!user || !user.hashedPassword) 
+                    throw new Error("User account does not exist.") 
 
-                if(!user || !user.hashedPassword) return null 
-
+                // Check user's password against DB 
                 const isValid = await bcrypt.compare(credentials.password, user.hashedPassword)
-
-                if(!isValid) return null
-                console.log("User successfully authorized.")
+                if(!isValid) 
+                    throw new Error("Invalid username or password.")
 
                 // User has been validated
-
+                console.log("User successfully authorized.")
+                
+                // Return User object to client
                 return {
                     id: user.id.toString(),
                     email: user.email.toString(),
@@ -58,47 +80,69 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         GitHub,
     ],
     session: {
-        maxAge: 7 * 24 * 60 * 60,
-        updateAge: 24 * 60 * 60,
-        strategy: "database"
+        maxAge: maxAge,       // 7 days
+        updateAge: 24 * 60 * 60,        // 1 day
+        strategy: "database"            // Store sessions in database, no JWT
     },
     pages: {
-        signIn: '/login',
+        signIn: '/login',                           // only page to login
     },
-    debug: process.env.NODE_ENV !== "production",
-    // events: {
-    //     async signOut( {session, token }) {
-    //         params.
-    //     }
-    // },
+    debug: process.env.NODE_ENV !== "production",   // Debug mode only in dev
+
+    /* 
+        JWT overrides for Credential login
+
+        we need this to be able to modify the default AuthJS behavior, which only 
+        uses JWT for credentials login. This method starts with the JWT callback below.
+
+        JWT callback --> encode (hide session-token in JWT) --> client browser
+        client browser --> JWT callback --> decode (recover our hidden session-token)
+
+        In a nutshell, we intercept the automatically generate JWT and add a boolean
+        to say that it is for 'credentials.' Then, we manually catch it on encode and
+        decode steps and replace its native token with our own generated session
+        token. This will allow a credential login to mimic the behavior of a social 
+        oAuth login. The browser session-token's JWT is replaced with a session token,
+        which is persisted in our database.
+    */
     jwt: {
+        // If the JWT has field credentials which is true, 
+        // we create a session and encode it to the JWT
         encode: async function (params) {
-            console.log("ENCODE:", params.token?.toString())
+
             if (params.token?.credentials) {
                 const sessionToken = randomUUID()
 
                 if (!params.token.sub) {
-                    throw new Error("No user ID found in token")
+                    console.log("No user ID found in token.")
+                    throw new Error("No user ID found in token.")
                 }
 
                 const createdSession = await prisma.session.create({
                     data: {
                         sessionToken: sessionToken,
                         userId: params.token.sub,
-                        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                        expires: new Date(Date.now() + maxAge * 1000),
                     }
                 })
 
                 if (!createdSession) {
-                    throw new Error("Failed to create session")
+                    console.log("Failed to create session.")
+                    throw new Error("Failed to create session.")
                 }
 
                 return sessionToken
             }
+
+            // Else return normal JWT if not 'credentials type'
             return defaultEncode(params);
         },
+
+        // True JWTs include two "."'s, so those can pass as is
+        // Our session-token that we hid inside the 'JWT' will not have a 
+        // period so we can safely decode our session token and pass it 
+        // back as a JWT.
         decode: async (params) => {
-            console.log("DECODE:", params.token?.toString())
            
             if (params.token?.includes(".")) {
                 return defaultDecode(params)
@@ -107,92 +151,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return { sessionToken: params.token } as JWT
         },
     },
+    /* Callbacks are important to basically intercept default behavior 
+    */
     callbacks: {
+        // During signIn for credential logins, we must create an account entry 
+        // for our user in the DB, if it does not exist already. 
         async signIn({ user, account }) {
 
             if(account?.provider === 'credentials' && user?.id) {
-                // Create User account if necessary
                 if(!createAccount(user.id)) {
                     console.log("Error creating or finding account.")
-                    return false
+                    throw new Error("Error creating or finding account.")
                 }
-                // await prisma.account.upsert({
-                //     where: {
-                //         provider_providerAccountId: {
-                //             provider: "credentials",
-                //             providerAccountId: user.id.toString()
-                //         }
-                //     },
-                //     update: {},
-                //     create: {
-                //         userId: user.id.toString(),
-                //         type: "credentials",
-                //         provider: "credentials",
-                //         providerAccountId: user.id.toString(),
-                //     }
-                // })
-
-                // const sessionToken = randomUUID()
-                // const expires = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000))
-
-                // await prisma.session.create({
-                //     data: {
-                //         userId: user.id,
-                //         sessionToken: sessionToken, 
-                //         expires: expires
-                //     }
-                // })
-
-                // const cookieStore = await cookies()
-                // cookieStore.set({
-                //     name: "next-auth.session-token",
-                //     value: sessionToken,
-                //     httpOnly: true,
-                //     sameSite: 'lax',
-                //     path: '/',
-                //     secure: false,
-                //     expires: expires,
-                // })
-
             }
             return true;
         },
+        
+        // Key part of our JWT intercept strategy. Marks JWT as 'credentials' type
         async jwt({ token, account }) {
 
             if (account?.provider === "credentials") {
                 token.credentials = true
             }
-            return token
-        },
-        // async session( { session, token }) {
-            
-        //     if(token.sessionToken) {
-        //         const sess = await prisma.session.findFirst({
-        //             where: { sessionToken: token.sessionToken }
-        //         })
-        //         if(sess) {
-        //             session.sessionToken = sess.sessionToken
-        //             session.user.id = sess.userId
-        //         }
-        //     }   
-            
 
-        //     // if(token.sessionToken){
-        //     //     session.sessionToken = token.sessionToken.toString()
-        //     //     session.user.id = token.sub!
-        //     // }
-        //     return session
-        // }
+            return token
+            
+        },
     }
 })
 
+/* 
+    Creates a new user in our database from the /signup page
+    checks for exiting user, hashes password, stores in DB, returns user with hashed pw.
+*/
 export async function createNewUser(email: string, password: string, name: string) {
     
     const alreadyExists = await prisma.user.findUnique({
         where: { email }
     })
 
-    if(alreadyExists) throw new Error("User already exists.")
+    if(alreadyExists) throw new Error("User with that email already exists.")
 
     const hashedPassword = await bcrypt.hash(password, 12)
 
@@ -207,34 +205,13 @@ export async function createNewUser(email: string, password: string, name: strin
     return newUser
 }
 
-// export async function credentialSignIn(formData: FormData) {
-
-//     const email = formData.get('email') as string
-//     const password = formData.get('password') as string
-
-
-//     console.log("credentials passed: ", email, password)
-
-//     try {
-//       const result = await signIn('credentials', {
-//         email: email,
-//         password: password,
-//         redirect: false,
-//       })
-
-//       if(result?.ok) {
-
-        
-
-//         await prisma.
-
-
-//       } else {
-//         return null
-//       }
-
-//     }
-// }
+/*
+    Creates an account for the user if it does not exist
+    Since oAuth automatically does this, this function is only used when
+    trying to add 'credentials' users
+    Returns account on success, null if not found
+    Throws error
+*/
 
 export async function createAccount(userId: string) {
 
@@ -254,18 +231,3 @@ export async function createAccount(userId: string) {
         }
     })
 }
-
-
-
-// export async function createUserSession(sessionToken: string, expires: Date, ) {
-    
-//     const sessionToken = randomUUID()
-//     const expires = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000))
-
-//     await prisma.session.create({
-//         data: {
-//             userId: user.id,
-//             sessionToken: sessionToken, 
-//             expires: expires
-//         }
-//     }
