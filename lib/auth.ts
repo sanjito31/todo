@@ -247,27 +247,3 @@ export async function createAccount(userId: string) {
         }
     })
 }
-
-// type 
-
-// export async function userCredentialLogin(email: string, password: string) {
-
-//     try{
-//         await signIn("credentials", { 
-//             email: email,
-//             password: password,
-//             redirect: false,
-//          })
-
-//          return {
-
-//          }
-
-//     } catch (err) {
-//         if(err) {
-//             return {
-                
-//             }
-//         }
-//     }
-// }
