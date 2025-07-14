@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
+import Google from "next-auth/providers/google"
 import prisma from "@/lib/prisma"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import bcrypt from 'bcrypt'
@@ -78,6 +79,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
         // User login via GitHub
         GitHub,
+        Google,
     ],
     session: {
         maxAge: maxAge,       // 7 days
