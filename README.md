@@ -112,7 +112,7 @@ This To Do List App is a minimal yet powerful task management tool built with mo
    npx auth secret
    ```
 
-   More information on setting up AuthJS can be found [here] (https://authjs.dev)  
+   More information on setting up AuthJS can be found [here](https://authjs.dev)  
 
 5. **Run the development server**
 
@@ -168,7 +168,7 @@ In the project directory, you can run:
 
 Contributions, issues, and feature requests are welcome! Feel free to fork the repository and submit a pull request.
 
-1. Fork it ([https://github.com/yourusername/todo-xi/fork](https://github.com/yourusername/todo-xi/fork))
+1. Fork it ([https://github.com/sanjito31/todo.git](https://github.com/sanjito31/todo.git))
 2. Create your feature branch (`git checkout -b feature/YourFeature`)
 3. Commit your changes (`git commit -m 'Add YourFeature'`)
 4. Push to the branch (`git push origin feature/YourFeature`)
