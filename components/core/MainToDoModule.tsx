@@ -13,14 +13,14 @@ import DeleteButton from "@/components/custom/DeleteButton";
 
 type TaskListProps = {
   initTasks: tasks[]
+  ownerID: string
 }
 
-export default function MainToDoModule( { initTasks } : TaskListProps) {
+export default function MainToDoModule( { initTasks, ownerID } : TaskListProps) {
 
     const [taskList, setTaskList] = useState<tasks[]>(initTasks.filter(t => !t.complete));
     const [completedTasks, setCompletedTasks] = useState<tasks[]>(initTasks.filter(t => t.complete));
     const [displayDate, setDisplayDate] = useState<Date>(new Date())
-    // const pathname = usePathname();
 
     async function handleCreateTask(detail: string) {
         const tempID = Math.floor(Math.random() * 1000000);
@@ -30,10 +30,10 @@ export default function MainToDoModule( { initTasks } : TaskListProps) {
             dueDate: displayDate,
             complete: false,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            ownerID: ownerID
         }
         setTaskList(t => [...t, newTask]);
-        //, pathname
         const realTask = await createTask(detail, displayDate);
         setTaskList(t => t.filter(task => task.id !== tempID));
         setTaskList(t => [...t, realTask]);
